@@ -1,149 +1,171 @@
+# Importing the libraries
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras.applications import MobileNetV2
 from tensorflow.keras.layers import AveragePooling2D
 from tensorflow.keras.layers import Dropout
 from tensorflow.keras.layers import Flatten
 from tensorflow.keras.layers import Dense
-from tensorflow.keras.layers import Input
 from tensorflow.keras.models import Model
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
 from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.preprocessing.image import load_img
 from tensorflow.keras.utils import to_categorical
-from sklearn.preprocessing import LabelBinarizer
+from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
 from imutils import paths
 import matplotlib.pyplot as plt
 import numpy as np
-import argparse
 import os
+import cv2
 
-# construct the argument parser and parse the arguments
-ap = argparse.ArgumentParser()
-ap.add_argument("-d", "--dataset", required=True,
-	help="path to input dataset")
-ap.add_argument("-m", "--model", type=str,
-	default="mask_detector.model",
-	help="path to output face mask detector model")
-args = vars(ap.parse_args())
-
-# initialize the initial learning rate, number of epochs to train for,
-# and batch size
+# Initialising some variables
 INIT_LR = 1e-4
 EPOCHS = 20
 BS = 32
 
-# grab the list of images in our dataset directory, then initialize
-# the list of data (i.e., images) and class images
-print("[INFO] loading images...")
-imagePaths = list(paths.list_images(args["dataset"]))
+# Loading the images
+imagePaths = list(paths.list_images("dataset"))
 data = []
 labels = []
 
-# loop over the image paths
+# Storing the images and the labels
 for imagePath in imagePaths:
-	# extract the class label from the filename
-	label = imagePath.split(os.path.sep)[-2]
+    
+    label = imagePath.split(os.path.sep)[-2]
+    image = load_img(imagePath, target_size=(224, 224))
+    image = img_to_array(image)
+    image = preprocess_input(image)
 
-	# load the input image (224x224) and preprocess it
-	image = load_img(imagePath, target_size=(224, 224))
-	image = img_to_array(image)
-	image = preprocess_input(image)
+    data.append(image)
+    labels.append(label)
 
-	# update the data and labels lists, respectively
-	data.append(image)
-	labels.append(label)
-
-# convert the data and labels to NumPy arrays
+# Converting the data and labels to NumPy arrays for easy computation
 data = np.array(data, dtype="float32")
 labels = np.array(labels)
 
-# perform one-hot encoding on the labels
-lb = LabelBinarizer()
+# Performing one-hot encoding on the labels
+lb = LabelEncoder()
 labels = lb.fit_transform(labels)
 labels = to_categorical(labels)
 
-# partition the data into training and testing splits using 75% of
-# the data for training and the remaining 25% for testing
-(trainX, testX, trainY, testY) = train_test_split(data, labels,
-	test_size=0.20, stratify=labels, random_state=42)
+# Splitting the dataset into training and testing sets
+(X_train, X_test, y_train, y_test) = train_test_split(data, labels,
+    test_size=0.20, stratify=labels, random_state=0)
 
-# construct the training image generator for data augmentation
-aug = ImageDataGenerator(
-	rotation_range=20,
-	zoom_range=0.15,
-	width_shift_range=0.2,
-	height_shift_range=0.2,
-	shear_range=0.15,
-	horizontal_flip=True,
-	fill_mode="nearest")
+# Using data augmentation for more data
+datagen = ImageDataGenerator(
+    rotation_range=20,
+    zoom_range=0.15,
+    width_shift_range=0.2,
+    height_shift_range=0.2,
+    shear_range=0.15,
+    horizontal_flip=True,
+    fill_mode="nearest")
 
-# load the MobileNetV2 network, ensuring the head FC layer sets are
-# left off
+datagen.fit(X_train)
+
+# Using the base imagenet model and modifying the final layer
 baseModel = MobileNetV2(weights="imagenet", include_top=False,
-	input_tensor=Input(shape=(224, 224, 3)))
+                            input_shape=(224, 224, 3))
 
-# construct the head of the model that will be placed on top of the
-# the base model
 headModel = baseModel.output
 headModel = AveragePooling2D(pool_size=(7, 7))(headModel)
 headModel = Flatten(name="flatten")(headModel)
 headModel = Dense(128, activation="relu")(headModel)
 headModel = Dropout(0.5)(headModel)
-headModel = Dense(2, activation="softmax")(headModel)
+headModel = Dense(3, activation="softmax")(headModel)
 
-# place the head FC model on top of the base model (this will become
-# the actual model we will train)
 model = Model(inputs=baseModel.input, outputs=headModel)
 
-# loop over all layers in the base model and freeze them so they will
-# *not* be updated during the first training process
 for layer in baseModel.layers:
-	layer.trainable = False
+    layer.trainable = False
 
-# compile our model
-print("[INFO] compiling model...")
+# Compiling the model
 opt = Adam(lr=INIT_LR, decay=INIT_LR / EPOCHS)
-model.compile(loss="binary_crossentropy", optimizer=opt,
-	metrics=["accuracy"])
+model.compile(loss='categorical_crossentropy', optimizer=opt, metrics=["accuracy"])
 
-# train the head of the network
-print("[INFO] training head...")
-H = model.fit(
-	aug.flow(trainX, trainY, batch_size=BS),
-	steps_per_epoch=len(trainX) // BS,
-	validation_data=(testX, testY),
-	validation_steps=len(testX) // BS,
-	epochs=EPOCHS)
+# Training the model's last layer
+model.fit(datagen.flow(X_train, y_train, batch_size=BS),
+                    steps_per_epoch=len(X_train) // BS,
+                    validation_data=(X_test, y_test),
+                    validation_steps=len(X_test) // BS,
+                    epochs=EPOCHS)
 
-# make predictions on the testing set
-print("[INFO] evaluating network...")
-predIdxs = model.predict(testX, batch_size=BS)
+# Evaluating model's performance
+predIdxs = model.predict(X_test, batch_size=BS)
 
-# for each image in the testing set we need to find the index of the
-# label with corresponding largest predicted probability
 predIdxs = np.argmax(predIdxs, axis=1)
 
-# show a nicely formatted classification report
-print(classification_report(testY.argmax(axis=1), predIdxs,
-	target_names=lb.classes_))
+# Printing the overall performance report
+print(classification_report(y_test.argmax(axis=1), predIdxs,
+    target_names=lb.classes_))
 
-# serialize the model to disk
-print("[INFO] saving mask detector model...")
-model.save(args["model"], save_format="h5")
+# Saving the model for future use
+model.save('model', save_format="h5")
 
-# plot the training loss and accuracy
-N = EPOCHS
-plt.style.use("ggplot")
-plt.figure()
-plt.plot(np.arange(0, N), H.history["loss"], label="train_loss")
-plt.plot(np.arange(0, N), H.history["val_loss"], label="val_loss")
-plt.plot(np.arange(0, N), H.history["acc"], label="train_acc")
-plt.plot(np.arange(0, N), H.history["val_acc"], label="val_acc")
-plt.title("Training Loss and Accuracy")
-plt.xlabel("Epoch #")
-plt.ylabel("Loss/Accuracy")
-plt.legend(loc="lower left")
-plt.savefig(args["plot"])
+# Defining the confidence level (for high precision, use ~0.8)
+confidence_arg = 0.6
+
+# Loading the face detector model
+prototxtPath = 'face_detector/deploy.prototxt'
+weightsPath = 'face_detector/res10_300x300_ssd_iter_140000.caffemodel'
+net = cv2.dnn.readNet(prototxtPath, weightsPath)
+
+# Reading the image
+image = cv2.imread('images/pic1.jpeg')
+orig = image.copy()
+(h, w) = image.shape[:2]
+
+# Constructing a blob
+blob = cv2.dnn.blobFromImage(image, 1.0, (300, 300),
+    (104.0, 177.0, 123.0))
+
+net.setInput(blob)
+detections = net.forward()
+
+# Detecting
+for i in range(0, detections.shape[2]):
+	
+	# Probability that it is a face
+    confidence = detections[0, 0, i, 2]
+
+    if confidence > confidence_arg:
+		
+        box = detections[0, 0, i, 3:7] * np.array([w, h, w, h])
+        (startX, startY, endX, endY) = box.astype("int")
+
+        (startX, startY) = (max(0, startX), max(0, startY))
+        (endX, endY) = (min(w - 1, endX), min(h - 1, endY))
+
+		# ROI, BGR->RGB
+        face = image[startY:endY, startX:endX]
+        face = cv2.cvtColor(face, cv2.COLOR_BGR2RGB)
+        face = cv2.resize(face, (224, 224))
+        face = img_to_array(face)
+        face = preprocess_input(face)
+        face = np.expand_dims(face, axis=0)
+
+		# Using the model to predict 
+        (noproperMask, mask, withoutMask) = model.predict(face)[0]
+
+        if (mask>withoutMask and mask>noproperMask):
+            label = "Mask"
+            color = (0, 255, 0)
+        elif (withoutMask>mask and withoutMask>noproperMask):
+            label = "No Mask"
+            color = (0, 0, 255)
+        else:
+            label = "No proper mask"
+            color = (255, 0, 0)
+
+        label = "{}: {:.2f}%".format(label, max(mask, withoutMask) * 100)
+
+        cv2.putText(image, label, (startX, startY - 10),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.45, color, 2)
+        cv2.rectangle(image, (startX, startY), (endX, endY), color, 2)
+
+# Output image with predictions
+cv2.imshow("Output", image)
+cv2.waitKey(0)
