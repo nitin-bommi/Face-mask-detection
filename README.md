@@ -1,6 +1,6 @@
 # Face-mask-detection
 
-### Introduction
+### 👨‍💻 Introduction
 
 __Taking precautions has become so important during this qurantine and wearing a mask😷 is an important one.__
 
@@ -18,7 +18,17 @@ With this last class, we can either warn them or teach them the proper way to we
 
 We have developed code to predict from an image as well as a video.
 
-### Model's architecture
+### 📚 Libaries or Frameworks used
+
++ [Tensorflow](https://www.tensorflow.org/)
++ [Keras](https://keras.io/)
++ [Caffe](https://caffe.berkeleyvision.org/)
++ [SkLearn](https://scikit-learn.org/stable/)
++ [OpenCV](https://opencv.org/)
++ [NumPy](https://numpy.org/)
++ [os](https://docs.python.org/3/library/os.html)
+
+### 🏛 Model's architecture
 
 The base architecture used is `MobileNetV2: Inverted Residuals and Linear Bottlenecks`. More about this architecture can be found [here](https://arxiv.org/abs/1801.04381). 
 
@@ -34,7 +44,7 @@ __The final architecture:__
 + Dropout to reduce overfitting
 + The final layer with 3 neurons (3 classes)
 
-### Model's performance
+### 🎭 Model's performance
 
 The model is trained on just 800 images (somewhat like a skewed dataset as the number of images for improperly worn class is very less) 
 
@@ -44,7 +54,7 @@ The overall performance of different metrics is shown below.
 
 <img src="https://github.com/Nitin1901/Face-mask-detection/blob/master/Samples/performance.PNG" height=200>
 
-### Test the model
+### 🧪 Test the model
 
 To run the model in your PC/laptop, follow the steps
 
@@ -63,7 +73,7 @@ $ python test_mask_video.py
 ```
 Again, if you are using some IDE, you can run the script directly.
 
-### Developing the model
+### 🏗 Developing the model
 
 To develop the model, my suggestion would be to gather more data from google images and manually select the portion of the face and categorise into respective classes. Then use your own architecture for developing.
 
@@ -111,4 +121,4 @@ We now have the face detections and can use `cv2` to loop over the detections an
 
 The same model is used for video predictions. 
 
-*(Please raise an issue if something is not working)*
+*(⚠️ Please raise an issue if something is not working)*
