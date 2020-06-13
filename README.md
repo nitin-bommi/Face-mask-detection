@@ -5,9 +5,9 @@
 __Taking precautions has become so important during this qurantine and wearing a mask😷 is an important one.__
 
 This model predicts 3 classes:
-+ *A person wore a mask*
-+ *A person did not wear a mask*
-+ *A person wore a mask improperly*
++ *A person wore a mask (green)*
++ *A person did not wear a mask (red)*
++ *A person wore a mask improperly (blue)*
 
 <p align="middle">
     <img src="https://github.com/Nitin1901/Face-mask-detection/blob/master/Samples/template_1.png" height=300>
