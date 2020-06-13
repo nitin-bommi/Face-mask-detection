@@ -18,7 +18,7 @@ With this last class, we can either warn them or teach them the proper way to we
 
 We have developed code to predict from an image as well as a video.
 
-### 📚 Libaries or Frameworks used
+### 📚 Libaries and Frameworks used
 
 + [Tensorflow](https://www.tensorflow.org/)
 + [Keras](https://keras.io/)
