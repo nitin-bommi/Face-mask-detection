@@ -30,7 +30,7 @@ We have developed code to predict from an image as well as a video.
 
 ### 🏛 Model's architecture
 
-The base architecture used is `MobileNetV2: Inverted Residuals and Linear Bottlenecks`. More about this architecture can be found [here](https://arxiv.org/abs/1801.04381). 
+The base architecture used is `MobileNetV2: Inverted Residuals and Linear Bottlenecks`. More about this architecture can be found [here](https://arxiv.org/pdf/1801.04381.pdf). 
 
 The head of the model is left untrained. The head is connected to a layer with 128 neurons and then a layer with 3 neurons as the output layer.
 
