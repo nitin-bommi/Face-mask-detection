@@ -9,6 +9,11 @@ This model predicts 3 classes:
 + *A person did not wear a mask*
 + *A person wore a mask improperly*
 
+<p align="middle">
+    <img src="https://github.com/Nitin1901/Face-mask-detection/blob/master/Samples/template_1.png" height=300>
+    <img src="https://github.com/Nitin1901/Face-mask-detection/blob/master/Samples/template_2.png" height=300>
+</p>                                                                                
+
 With this last class, we can either warn them or teach them the proper way to wear a mask. 
 
 We have developed code to predict from an image as well as a video.
@@ -34,6 +39,10 @@ __The final architecture:__
 The model is trained on just 800 images (somewhat like a skewed dataset as the number of images for improperly worn class is very less) 
 
 Since we imported the weights of the MobileNetV2 model, the model was able to do better. We are trying to gather more data from different sources. 
+
+The overall performance of different metrics is shown below.
+
+<img src="https://github.com/Nitin1901/Face-mask-detection/blob/master/Samples/performance.PNG" height=200>
 
 ### Test the model
 
