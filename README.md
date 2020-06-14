@@ -121,4 +121,10 @@ We now have the face detections and can use `cv2` to loop over the detections an
 
 The same model is used for video predictions. 
 
+### 💾 Dataset
+
+The dataset is obtained from this [link](https://drive.google.com/file/d/1mF3WFKpNsh_9gdmHQ4Xm3jb-s67ewauF/view).
+
+If there is diffuculty downloading the dataset, raise an issue and I will send you a zip file.
+
 *(⚠️ Please raise an issue if something is not working)*
